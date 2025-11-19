@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<meta name="description" content="Free online image cropper and resizer. Secure client-side processing. Crop for Instagram, Twitter, and web formats like WebP and PNG without uploading to a server." />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
+<meta name="description" content="Free online image editor. Crop, Rotate, Filter, and Resize images securely in your browser." />
 <title>FitFrame Pro — Studio</title>
+
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiRml0RnJhbWUgUHJvIiwic2hvcnRfbmFtZSI6IkZpdEZyYW1lIiwic3RhcnRfdXJsIjoiLi8iLCJkaXNwbGF5IjoiYnJvd3NlciIsImJhY2tncm91bmRfY29sb3IiOiIjMGYxMDE0IiwidGhlbWVfY29sb3IiOiIjNjM2NmYxIn0=" />
 
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'/%3E%3Cpath d='M19 9h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2v-1'/%3E%3Cpath d='M10 9h4a1 1 0 0 1 1 1v4'/%3E%3C/svg%3E" type="image/svg+xml">
 
@@ -21,11 +23,8 @@
     --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
     --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
   }
-  * { box-sizing: border-box; outline: none; }
-  
-  /* 1. SMOOTH SCROLLING ENABLED */
   html { scroll-behavior: smooth; }
-  
+  * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
   body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
   /* Header */
@@ -39,72 +38,97 @@
   .workspace { display: flex; flex: 1; height: calc(100vh - 60px); overflow: hidden; }
   .stage { flex: 1; background: #09090b; position: relative; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
   
-  /* Welcome Screen */
+  /* Welcome */
   .welcome-container { width: 100%; max-width: 800px; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; min-height: 100%; }
   .upload-box { border: 2px dashed var(--border); border-radius: 16px; padding: 40px; text-align: center; background: rgba(255,255,255,0.02); cursor: pointer; transition: 0.2s; width: 100%; max-width: 500px; margin-bottom: 60px; }
   .upload-box:hover { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
   .upload-icon-svg { width: 64px; height: 64px; stroke: var(--text-muted); margin-bottom: 16px; opacity: 0.5; }
   .upload-text { font-size: 18px; font-weight: 600; color: var(--text-main); margin-bottom: 8px; display: block; }
 
-  /* Editor State */
+  /* Editor */
   #editorState { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; display: none; }
-  .canvas-container { box-shadow: var(--shadow); border-radius: 8px; overflow: hidden; background-image: linear-gradient(45deg, #1c1c1c 25%, transparent 25%), linear-gradient(-45deg, #1c1c1c 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1c1c1c 75%), linear-gradient(-45deg, transparent 75%, #1c1c1c 75%); background-size: 20px 20px; background-color: #121212; border: 1px solid #333; }
+  .canvas-container { 
+    box-shadow: var(--shadow); border-radius: 8px; overflow: hidden; 
+    background-image: linear-gradient(45deg, #1c1c1c 25%, transparent 25%), linear-gradient(-45deg, #1c1c1c 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1c1c1c 75%), linear-gradient(-45deg, transparent 75%, #1c1c1c 75%); background-size: 20px 20px; background-color: #121212; border: 1px solid #333; 
+    touch-action: none; /* CRITICAL: Stops page scroll when dragging image */
+  }
   canvas { display: block; max-width: 100%; height: auto; cursor: grab; }
   canvas:active { cursor: grabbing; }
-  .stage-toolbar { position: absolute; bottom: 30px; background: rgba(24, 24, 27, 0.8); backdrop-filter: blur(12px); padding: 10px 16px; border-radius: 50px; border: 1px solid var(--border); display: flex; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); z-index: 10; }
+  
+  /* Floating Toolbar */
+  .stage-toolbar { position: absolute; bottom: 30px; background: rgba(24, 24, 27, 0.85); backdrop-filter: blur(12px); padding: 10px 16px; border-radius: 50px; border: 1px solid var(--border); display: flex; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); z-index: 10; align-items: center; }
+  .toolbar-sep { width: 1px; background: var(--border); height: 24px; margin: 0 2px; }
 
   /* Sidebar */
   .sidebar { width: 340px; background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; height: 100%; }
   .sidebar-content { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
   .sidebar-footer { flex-shrink: 0; padding: 20px 24px; background: var(--bg-panel); border-top: 1px solid var(--border); z-index: 20; }
 
-  /* UI Elements */
-  h3 { font-size: 12px; text-transform: uppercase; color: var(--text-muted); margin: 0 0 12px 0; font-weight: 700; }
+  /* UI Components */
+  h3 { font-size: 11px; text-transform: uppercase; color: var(--primary); margin: 0 0 12px 0; font-weight: 800; letter-spacing: 1px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
   input, select { width: 100%; background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 5px; }
-  .btn-primary { background: var(--primary); color: white; width: 100%; padding: 14px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; }
-  .btn-icon { background: transparent; border: none; color: var(--text-main); padding: 8px; cursor: pointer; }
+  input:focus, select:focus { border-color: var(--primary); }
   
+  .btn-primary { background: var(--primary); color: white; width: 100%; padding: 14px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; transition:0.2s; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  
+  .tool-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+  .tool-btn { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-muted); border-radius: 8px; padding: 10px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+  .tool-btn:hover { background: #323238; color: #fff; border-color: #52525b; }
+  .tool-btn svg { width: 18px; height: 18px; }
+
+  /* Sliders & Checks */
+  .slider-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .slider-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); }
+  input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 8px 0; cursor: pointer; }
+  input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #3f3f46; border-radius: 2px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: #fff; margin-top: -5px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); transition: transform 0.1s; }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  .check-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; padding: 4px 0; cursor: pointer; }
+  .check-row input { width: auto; margin: 0; accent-color: var(--primary); }
+
   /* SEO Section */
   .seo-section { max-width: 700px; width: 100%; color: var(--text-muted); line-height: 1.6; font-size: 15px; text-align: left; margin-top: 20px; padding-top: 40px; border-top: 1px solid var(--border); }
   .seo-section h2 { color: var(--text-main); font-size: 20px; margin-top: 30px; font-family: var(--font-brand); }
-  
-  /* Footer */
+  .seo-section ul, .seo-section ol { padding-left: 20px; margin-bottom: 16px; }
+  .seo-section li { margin-bottom: 8px; }
+  .seo-section strong { color: var(--text-main); }
+
   .app-footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); width: 100%; text-align: center; font-size: 13px; color: var(--text-muted); padding-bottom: 40px; }
   .footer-links { display: flex; gap: 20px; justify-content: center; margin-bottom: 10px; }
   .footer-links a { color: var(--text-muted); text-decoration: none; cursor: pointer; transition: color 0.2s; }
   .footer-links a:hover { color: var(--primary); }
 
-  /* 2. MODAL ANIMATIONS & STYLING */
-  .modal-overlay { 
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-    background: rgba(0,0,0,0.7); z-index: 100; backdrop-filter: blur(4px); 
-    display: none; align-items: center; justify-content: center;
-    opacity: 0; transition: opacity 0.3s ease; /* Smooth overlay fade */
-  }
-  .modal-box { 
-    background: var(--bg-panel); width: 90%; max-width: 600px; max-height: 80vh; 
-    border-radius: 16px; border: 1px solid var(--border); 
-    display: flex; flex-direction: column; box-shadow: var(--shadow);
-    transform: scale(0.95) translateY(10px); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); /* Smooth popup pop */
-  }
-  /* Class to trigger animation */
+  /* Modals */
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+  .modal-box { background: var(--bg-panel); width: 90%; max-width: 600px; max-height: 80vh; border-radius: 16px; border: 1px solid var(--border); display: flex; flex-direction: column; box-shadow: var(--shadow); transform: scale(0.95) translateY(10px); transition: transform 0.3s; }
   .modal-overlay.active { opacity: 1; }
   .modal-overlay.active .modal-box { transform: scale(1) translateY(0); }
-
   .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
   .modal-title { font-weight: 700; color: var(--text-main); }
   .modal-body { padding: 24px; overflow-y: auto; color: var(--text-muted); line-height: 1.6; font-size: 14px; }
   .close-modal { background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; }
-  
-  /* Contact Button in Modal */
   .contact-btn { display: inline-block; background: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 10px; }
-  .contact-btn:hover { background: var(--primary-hover); }
 
   .hidden { display: none !important; }
+
+  /* === MOBILE RESPONSIVE FIX (v3.5) === */
   @media (max-width: 900px) { 
-    .workspace { flex-direction: column; height: auto; }
-    .sidebar { width: 100%; border-left: none; border-top: 1px solid var(--border); }
-    .stage { min-height: 100vh; } 
+    /* 1. Enable body scroll */
+    body { height: auto; overflow-y: auto; }
+    
+    /* 2. Stack layout and allow overflow */
+    .workspace { flex-direction: column; height: auto; overflow: visible; }
+    
+    /* 3. Stage (Canvas): Reduced height so Sidebar peeks out */
+    .stage { min-height: 60vh; height: auto; padding-bottom: 40px; }
+    
+    /* 4. Sidebar (Settings): Fully visible below */
+    .sidebar { width: 100%; height: auto; border-left: none; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .sidebar-content { overflow: visible; height: auto; }
+    
+    /* 5. Footer positioning */
+    .sidebar-footer { position: relative; border-top: 1px solid var(--border); z-index: 1; }
   }
 </style>
 </head>
@@ -126,7 +150,7 @@
       </svg>
       <div class="brand-text">FitFrame</div> <span class="badge">PRO</span>
     </div>
-    <div><a href="#" style="color:var(--text-muted); font-size:12px; text-decoration:none">v2.7</a></div>
+    <div><a href="#" style="color:var(--text-muted); font-size:12px; text-decoration:none">v3.5 Stable</a></div>
   </header>
 
   <div class="workspace">
@@ -144,19 +168,31 @@
         </label>
 
         <section class="seo-section">
-          <h2>How to Crop Images for Instagram & Social Media</h2>
-          <p>FitFrame Pro is a secure, client-side image resizing tool designed for creators. Whether you need a 4:5 portrait for an Instagram Feed, a 9:16 story layout, or a square 1:1 profile picture, our tool ensures your images fit perfectly without losing quality.</p>
-          <h2>Why use WebP format?</h2>
-          <p>We support exporting to <strong>WebP</strong>, a modern image format that provides superior lossless and lossy compression for images on the web.</p>
-          <h2>Privacy Assurance (Local Processing)</h2>
-          <p>Unlike other online croppers, FitFrame processes your images <strong>locally in your browser</strong>. Your photos are never uploaded to a remote server.</p>
+          <h2>The Ultimate Free Online Image Editor & Cropper</h2>
+          <p>FitFrame Pro is a powerful, secure, and free online tool designed for creators, developers, and social media managers. Unlike traditional image editors that require heavy software installations or unsafe server uploads, FitFrame runs entirely in your browser. This means you can crop, resize, rotate, and filter your images instantly without ever compromising your privacy.</p>
+
+          <h2>Key Features of FitFrame Studio</h2>
+          <ul>
+              <li><strong>Smart Cropping:</strong> Use pre-set aspect ratios like 1:1 (Square), 4:5 (Instagram Portrait), and 9:16 (Stories) to ensure your content fits perfectly on every platform.</li>
+              <li><strong>Circle Crop Mode:</strong> Instantly create rounded profile pictures for LinkedIn, Twitter/X, and WhatsApp with our dedicated circular cropping tool that exports transparent PNGs.</li>
+              <li><strong>Privacy-First Architecture:</strong> We utilize client-side processing (HTML5 Canvas). Your photos are never uploaded to a cloud server, making FitFrame safe for editing sensitive documents or personal photos.</li>
+              <li><strong>Modern Formats:</strong> Export your work in next-gen formats like <strong>WebP</strong> for faster website loading speeds, or standard PNG/JPG for high compatibility.</li>
+          </ul>
+
+          <h2>How to Resize and Crop Images Securely</h2>
+          <ol>
+              <li><strong>Upload:</strong> Drag and drop your image (JPG, PNG, or WebP) into the workspace.</li>
+              <li><strong>Transform:</strong> Use the sidebar tools to rotate your image if it's sideways, or flip it for a mirror effect.</li>
+              <li><strong>Adjust:</strong> Apply brightness or contrast filters to enhance the visual quality.</li>
+              <li><strong>Crop & Export:</strong> Select your desired output size (e.g., 1080x1080) and click "Download Image." Your file is generated instantly on your device.</li>
+          </ol>
         </section>
 
         <footer class="app-footer">
           <div class="footer-links">
-            <a onclick="openModal('privacy')">Privacy Policy</a>
-            <a onclick="openModal('terms')">Terms of Service</a>
-            <a onclick="openModal('contact')">Contact Us</a>
+            <a onclick="openModal('privacy')">Privacy</a>
+            <a onclick="openModal('terms')">Terms</a>
+            <a onclick="openModal('contact')">Contact</a>
           </div>
           <div>&copy; 2025 FitFrame Pro. All rights reserved.</div>
         </footer>
@@ -165,9 +201,10 @@
       <div id="editorState">
         <div class="canvas-container"><canvas id="canvas"></canvas></div>
         <div class="stage-toolbar">
-          <button id="resetBtn" class="btn-icon" title="Reset"><svg width="16" height="16" stroke="currentColor" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12" /><path d="M3 3v9h9" /></svg></button>
-          <button id="fitBtn" class="btn-icon" title="Fit"><svg width="16" height="16" stroke="currentColor" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
-          <div style="width:1px; background:var(--border); height:24px; margin:0 6px"></div>
+          <button id="resetBtn" class="tool-btn" title="Reset View"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
+          <button id="fitBtn" class="tool-btn" title="Fit to Screen"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg></button>
+          <div class="toolbar-sep"></div>
+          <span style="font-size:11px; color:var(--text-muted); font-weight:600; letter-spacing:0.5px">OVERLAY</span>
           <input id="overlayRange" type="range" min="0" max="0.9" step="0.05" value="0" style="width:80px" />
         </div>
       </div>
@@ -175,32 +212,46 @@
 
     <aside class="sidebar">
       <div class="sidebar-content">
-        <div style="display:flex; flex-direction:column; gap:14px">
-          <h3>Layout</h3>
-          <label>Preset</label>
-          <select id="preset">
-            <option value="1000x1000">Square (1000x1000)</option>
-            <option value="1080x1350">IG Portrait (4:5)</option>
-            <option value="1080x1920">Story (9:16)</option>
-            <option value="1200x628">Twitter/FB Post</option>
-            <option value="custom">Custom...</option>
-          </select>
-          <div id="customSize" class="hidden" style="display:flex; gap:10px"><input id="outW" type="number" value="1000"><input id="outH" type="number" value="1000"></div>
-          <label>Background</label>
-          <select id="bgSelect"><option value="transparent">Transparent</option><option value="#ffffff">White</option><option value="#000000">Black</option></select>
+        <h3>Transform</h3>
+        <div class="tool-grid">
+          <button class="tool-btn" id="rotL" title="Rotate Left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12" /><path d="M3 3v9h9" /></svg></button>
+          <button class="tool-btn" id="rotR" title="Rotate Right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 12" /><path d="M21 3v9h-9" /></svg></button>
+          <button class="tool-btn" id="flipH" title="Flip Horizontal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 4v16M21 12l-4-4v3h-2c-4 0-8-3-8-7 0 4 4 7 8 7h2v3l4-4z" transform="scale(-1,1) translate(-24,0)"/></svg></button>
+          <button class="tool-btn" id="flipV" title="Flip Vertical"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"/><path d="M12 3v3"/></svg></button>
         </div>
         <div style="height:1px; background:var(--border); margin:10px 0"></div>
-        <div style="display:flex; flex-direction:column; gap:14px">
-          <h3>Export</h3>
-          <div style="display:flex; gap:10px">
-            <select id="format"><option value="image/png">PNG</option><option value="image/jpeg">JPG</option><option value="image/webp">WebP</option><option value="image/svg+xml">SVG (Wrapper)</option></select>
-            <input id="fname" value="fitframe-edit">
-          </div>
-          <div id="qualityWrap" class="hidden"><label>Quality: <span id="qval">0.9</span></label><input id="quality" type="range" min="0.1" max="1" step="0.1" value="0.9"></div>
-          <label style="display:flex; align-items:center; gap:8px; font-size:13px"><input id="noUpscale" type="checkbox" style="width:auto"> Prevent Upscaling</label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:13px"><input id="fitExport" type="checkbox" style="width:auto"> Auto-fit on Export</label>
+
+        <h3>Filters</h3>
+        <div class="slider-group"><div class="slider-label"><span>Brightness</span><span id="valBright">100%</span></div><input id="bright" type="range" min="0" max="200" value="100"></div>
+        <div class="slider-group"><div class="slider-label"><span>Contrast</span><span id="valCont">100%</span></div><input id="cont" type="range" min="0" max="200" value="100"></div>
+        <div class="slider-group"><div class="slider-label"><span>Grayscale</span><span id="valGray">0%</span></div><input id="gray" type="range" min="0" max="100" value="0"></div>
+        <div style="height:1px; background:var(--border); margin:10px 0"></div>
+
+        <h3>Layout</h3>
+        <label>Preset Size</label>
+        <select id="preset">
+          <option value="1000x1000">Square (1:1)</option>
+          <option value="1080x1350">IG Portrait (4:5)</option>
+          <option value="1080x1920">Story (9:16)</option>
+          <option value="1200x628">Twitter/Link</option>
+          <option value="custom">Custom...</option>
+        </select>
+        <div id="customSize" class="hidden" style="display:flex; gap:10px"><input id="outW" type="number" value="1000"><input id="outH" type="number" value="1000"></div>
+        <label>Background</label>
+        <select id="bgSelect"><option value="transparent">Transparent</option><option value="#ffffff">White</option><option value="#000000">Black</option></select>
+        <label class="check-row"><span style="display:flex;align-items:center;gap:6px">🔴 Circle Crop (Profile)</span><input id="circleCrop" type="checkbox"></label>
+        <div style="height:1px; background:var(--border); margin:10px 0"></div>
+
+        <h3>Export</h3>
+        <div style="display:flex; gap:10px">
+          <select id="format"><option value="image/png">PNG</option><option value="image/jpeg">JPG</option><option value="image/webp">WebP</option><option value="image/svg+xml">SVG</option></select>
+          <input id="fname" value="fitframe-edit">
         </div>
+        <div id="qualityWrap" class="hidden"><label>Quality: <span id="qval">0.9</span></label><input id="quality" type="range" min="0.1" max="1" step="0.1" value="0.9"></div>
+        <label class="check-row"><span>Prevent Upscaling</span><input id="noUpscale" type="checkbox"></label>
+        <label class="check-row"><span>Auto-fit on Export</span><input id="fitExport" type="checkbox"></label>
       </div>
+
       <div class="sidebar-footer">
         <div class="stats" style="background:rgba(99,102,241,0.1); padding:12px; border-radius:8px; display:flex; justify-content:space-between; font-size:12px; margin-bottom:10px">
           <span><strong id="showW">1000</strong> x <strong id="showH">1000</strong></span><span id="sizeEstimate">Est: --</span>
@@ -214,96 +265,122 @@
 const canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d',{alpha:true});
 const fileIn=document.getElementById('file'), dropzone=document.getElementById('dropzone');
 const welcomeState=document.getElementById('welcomeState'), editorState=document.getElementById('editorState');
-let img=new Image(), imgLoaded=false, state={tx:0, ty:0, scale:1, imgW:0, imgH:0};
+let img=new Image(), imgLoaded=false;
+let state={tx:0, ty:0, scale:1, imgW:0, imgH:0, rot:0, flipH:1, flipV:1, bri:100, con:100, gry:0, circle:false};
 
-/* UPDATED: Added "contact" modal content */
-const modalText = {
-  privacy: `<strong>Privacy Policy</strong><br><span style="font-size:12px; color:var(--text-muted)">Last updated: November 20, 2025</span><br><br><strong>1. Introduction</strong><br>Welcome to FitFrame. We are committed to protecting your privacy.<br><br><strong>2. Local Processing</strong><br>We do not upload your images to any server. All processing happens locally in your browser.<br><br><strong>3. Data Collection</strong><br>&bull; Usage Data: Anonymous analytics.<br>&bull; Local Storage: Preferences saved on your device.<br><br><strong>4. Third-Party</strong><br>&bull; Google AdSense: We may use AdSense. Google uses cookies for ads.<br>&bull; Netlify: Our host may collect standard server logs.<br><br><strong>5. Contact</strong><br>support@fitframe.in`,
-  terms: `<strong>Terms of Service</strong><br><span style="font-size:12px; color:var(--text-muted)">Last updated: November 20, 2025</span><br><br><strong>1. Acceptance:</strong> By using FitFrame, you agree to these terms.<br><br><strong>2. License:</strong> FitFrame is free for personal and commercial use. You retain full ownership of your images.<br><br><strong>3. Disclaimer:</strong> The tool is provided "as is" without warranty.`,
-  contact: `<strong>Contact Us</strong><br><br>
-  Have a question, suggestion, or found a bug? We'd love to hear from you.<br><br>
-  <strong>Support Email:</strong><br>
-  Our team usually responds within 24 hours.<br>
-  <a href="mailto:support@fitframe.in" class="contact-btn">support@fitframe.in</a><br><br>
-  <strong>Business Inquiries:</strong><br>
-  For partnerships or advertising opportunities, please use the email above with subject "Business".`
+const modalText={
+  privacy: `<strong>Privacy Policy</strong><br><span style="font-size:12px;color:var(--text-muted)">Updated: Nov 2025</span><br><br><strong>1. Introduction</strong><br>Welcome to FitFrame. We prioritize your privacy.<br><br><strong>2. Local Processing</strong><br>We do not upload your images to any server. All processing is local to your browser.<br><br><strong>3. Data</strong><br>We use local storage for preferences. We do not collect personal image data.`,
+  terms: `<strong>Terms of Service</strong><br>Free for personal/commercial use. No warranties provided. Provided "as is".`,
+  contact: `<strong>Contact Us</strong><br><br>Email: <a href="mailto:support@fitframe.in" class="contact-btn">support@fitframe.in</a>`
 };
+function openModal(t){document.getElementById('modalTitle').innerText=t==='contact'?'Contact':t;document.getElementById('modalBody').innerHTML=modalText[t];const o=document.getElementById('modalOverlay');o.style.display='flex';setTimeout(()=>o.classList.add('active'),10);}
+function closeModal(){const o=document.getElementById('modalOverlay');o.classList.remove('active');setTimeout(()=>o.style.display='none',300);}
+document.getElementById('modalOverlay').onclick=e=>{if(e.target.id==='modalOverlay')closeModal();}
 
-/* ANIMATION LOGIC FOR MODALS */
-function openModal(type){ 
-  document.getElementById('modalTitle').innerText = type === 'contact' ? 'Get in Touch' : (type === 'privacy' ? 'Privacy Policy' : 'Terms'); 
-  document.getElementById('modalBody').innerHTML = modalText[type]; 
-  const overlay = document.getElementById('modalOverlay');
-  overlay.style.display = 'flex';
-  // Small timeout to trigger CSS transition
-  setTimeout(()=> overlay.classList.add('active'), 10);
+function setView(h){if(h){welcomeState.style.display='none';editorState.style.display='flex';}else{welcomeState.style.display='flex';editorState.style.display='none';}}
+function loadFile(f){if(!f||!f.type.startsWith('image/'))return;const u=URL.createObjectURL(f);const i=new Image();i.onload=()=>{img=i;state.imgW=img.width;state.imgH=img.height;state.rot=0;state.flipH=1;state.flipV=1;setView(true);setTimeout(()=>{setVisualSize();fitImage();updateEst();},50);};i.src=u;}
+fileIn.onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0]);}
+dropzone.onclick=()=>fileIn.click();
+window.ondrop=e=>{e.preventDefault();if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);}
+window.ondragover=e=>e.preventDefault();
+window.onpaste=e=>{const i=e.clipboardData?.items;if(i)for(const x of i)if(x.type.startsWith('image/'))loadFile(x.getAsFile());}
+
+document.getElementById('rotL').onclick=()=>{state.rot-=90;render();updateEst();}
+document.getElementById('rotR').onclick=()=>{state.rot+=90;render();updateEst();}
+document.getElementById('flipH').onclick=()=>{state.flipH*=-1;render();updateEst();}
+document.getElementById('flipV').onclick=()=>{state.flipV*=-1;render();updateEst();}
+const br=document.getElementById('bright'), ct=document.getElementById('cont'), gr=document.getElementById('gray');
+[br,ct,gr].forEach(el=>el.oninput=()=>{
+  state.bri=br.value; state.con=ct.value; state.gry=gr.value;
+  document.getElementById('valBright').innerText=state.bri+'%'; document.getElementById('valCont').innerText=state.con+'%'; document.getElementById('valGray').innerText=state.gry+'%';
+  render(); updateEst();
+});
+document.getElementById('circleCrop').onchange=e=>{state.circle=e.target.checked;render();updateEst();}
+
+function render(){
+  if(!imgLoaded)return; ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save(); ctx.translate(canvas.width/2+state.tx, canvas.height/2+state.ty); ctx.scale(state.scale, state.scale);
+  ctx.rotate(state.rot*Math.PI/180); ctx.scale(state.flipH, state.flipV);
+  ctx.filter=`brightness(${state.bri}%) contrast(${state.con}%) grayscale(${state.gry}%)`;
+  ctx.drawImage(img, -state.imgW/2, -state.imgH/2); ctx.restore();
+  if(state.circle){ ctx.save(); ctx.fillStyle='rgba(0,0,0,0.8)'; ctx.beginPath(); ctx.rect(0,0,canvas.width,canvas.height); ctx.arc(canvas.width/2, canvas.height/2, Math.min(canvas.width,canvas.height)/2, 0, 2*Math.PI, true); ctx.fill(); ctx.restore(); } 
+  else { const ov=Number(document.getElementById('overlayRange').value); if(ov>0){ ctx.fillStyle=`rgba(0,0,0,${ov})`; ctx.fillRect(0,0,canvas.width,canvas.height); } }
 }
-function closeModal(){ 
-  const overlay = document.getElementById('modalOverlay');
-  overlay.classList.remove('active');
-  // Wait for animation to finish before hiding
-  setTimeout(()=> overlay.style.display = 'none', 300);
+function fitImage(){state.scale=Math.min(canvas.width/state.imgW, canvas.height/state.imgH);state.tx=0;state.ty=0;render();}
+function setVisualSize(){
+  const box=document.querySelector('.stage'); const wVal=Number(outW.value), hVal=Number(outH.value);
+  canvas.width=Math.min(box.clientWidth-40, wVal); canvas.height=canvas.width*(hVal/wVal);
+  if(canvas.height>box.clientHeight-100){canvas.height=box.clientHeight-100;canvas.width=canvas.height*(wVal/hVal);}
+  imgLoaded=true; render();
 }
-document.getElementById('modalOverlay').addEventListener('click', (e)=>{ if(e.target===document.getElementById('modalOverlay')) closeModal(); });
 
-function setView(hasImg){ if(hasImg){ welcomeState.style.display='none'; editorState.style.display='flex'; } else { welcomeState.style.display='flex'; editorState.style.display='none'; } }
-
-const preset=document.getElementById('preset'), customSize=document.getElementById('customSize');
 const outW=document.getElementById('outW'), outH=document.getElementById('outH');
+const preset=document.getElementById('preset'), custom=document.getElementById('customSize');
 const format=document.getElementById('format'), quality=document.getElementById('quality');
-const showW=document.getElementById('showW'), showH=document.getElementById('showH');
+const noUpscale=document.getElementById('noUpscale');
 
-preset.addEventListener('change', ()=>{ if(preset.value==='custom') customSize.classList.remove('hidden'); else { customSize.classList.add('hidden'); const [w,h]=preset.value.split('x').map(Number); outW.value=w; outH.value=h; updateDims(); } });
-[outW,outH].forEach(i=>i.addEventListener('input', updateDims));
-function updateDims(){ showW.innerText=outW.value; showH.innerText=outH.value; if(imgLoaded){ setVisualSize(); updateEst(); }}
-
-function loadFile(f){ if(!f || !f.type.startsWith('image/')) return; const url=URL.createObjectURL(f); const im=new Image(); im.onload=()=>{ img=im; state.imgW=img.width; state.imgH=img.height; setView(true); setTimeout(()=>{ setVisualSize(); fitImage(); updateEst(); },50); }; im.src=url; }
-fileIn.addEventListener('change', e=>{ if(e.target.files[0]) loadFile(e.target.files[0]); });
-dropzone.addEventListener('click', ()=>fileIn.click());
-['dragenter','dragover','dragleave','drop'].forEach(e=>window.addEventListener(e, ev=>ev.preventDefault()));
-window.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) loadFile(f); });
-window.addEventListener('paste',e=>{ const items=e.clipboardData?.items; if(!items)return; for(const it of items){if(it.type.startsWith('image/')){loadFile(it.getAsFile());break;}} });
-
-function render(){ if(!imgLoaded) return; ctx.clearRect(0,0,canvas.width,canvas.height); ctx.save(); ctx.translate(canvas.width/2+state.tx, canvas.height/2+state.ty); ctx.scale(state.scale, state.scale); ctx.drawImage(img, -state.imgW/2, -state.imgH/2); ctx.restore(); const ov=Number(document.getElementById('overlayRange').value); if(ov>0){ ctx.fillStyle=`rgba(0,0,0,${ov})`; ctx.fillRect(0,0,canvas.width,canvas.height); } }
-function fitImage(){ state.scale=Math.min(canvas.width/state.imgW, canvas.height/state.imgH); state.tx=0; state.ty=0; render(); }
-function setVisualSize(){ const box=document.querySelector('.stage'); canvas.width=Math.min(box.clientWidth-40, Number(outW.value)); canvas.height=canvas.width*(Number(outH.value)/Number(outW.value)); if(canvas.height>box.clientHeight-100){ canvas.height=box.clientHeight-100; canvas.width=canvas.height*(Number(outW.value)/Number(outH.value)); } imgLoaded=true; render(); }
+preset.onchange=()=>{if(preset.value==='custom')custom.classList.remove('hidden');else{custom.classList.add('hidden');const[w,h]=preset.value.split('x').map(Number);outW.value=w;outH.value=h;updateDims();}}
+[outW,outH].forEach(i=>i.oninput=updateDims);
+function updateDims(){ document.getElementById('showW').innerText=outW.value; document.getElementById('showH').innerText=outH.value; if(imgLoaded){setVisualSize();updateEst();} }
+quality.oninput=()=>{document.getElementById('qval').textContent=quality.value;updateEst();}
+format.onchange=()=>{document.getElementById('qualityWrap').classList.toggle('hidden', format.value!=='image/jpeg'&&format.value!=='image/webp'); updateEst();}
+noUpscale.onchange=updateEst;
 
 let drag=false, lx=0, ly=0;
-canvas.addEventListener('mousedown', e=>{ drag=true; lx=e.clientX; ly=e.clientY; });
-window.addEventListener('mouseup', ()=>drag=false);
-window.addEventListener('mousemove', e=>{ if(drag && imgLoaded){ state.tx+=e.clientX-lx; state.ty+=e.clientY-ly; lx=e.clientX; ly=e.clientY; render(); } });
-canvas.addEventListener('wheel', e=>{ e.preventDefault(); const s=Math.exp(-e.deltaY*0.001); state.scale*=s; render(); updateEst(); });
+canvas.onmousedown=e=>{drag=true;lx=e.clientX;ly=e.clientY;}
+window.onmouseup=()=>drag=false;
+window.onmousemove=e=>{if(drag&&imgLoaded){state.tx+=e.clientX-lx;state.ty+=e.clientY-ly;lx=e.clientX;ly=e.clientY;render();}}
+
+/* MOBILE TOUCH LOGIC */
+let initialPinchDist = 0;
+canvas.addEventListener('touchstart', e => { if (e.touches.length === 1) { drag = true; lx = e.touches[0].clientX; ly = e.touches[0].clientY; } else if (e.touches.length === 2) { drag = false; initialPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); } }, {passive: false});
+canvas.addEventListener('touchmove', e => { if (e.touches.length === 1 && drag && imgLoaded) { e.preventDefault(); const x = e.touches[0].clientX; const y = e.touches[0].clientY; state.tx += x - lx; state.ty += y - ly; lx = x; ly = y; render(); } else if (e.touches.length === 2 && imgLoaded) { e.preventDefault(); const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); if (initialPinchDist > 0) { const zoom = dist / initialPinchDist; state.scale *= zoom; initialPinchDist = dist; render(); updateEst(); } } }, {passive: false});
+canvas.addEventListener('touchend', () => { drag = false; initialPinchDist = 0; });
+
+canvas.onwheel=e=>{e.preventDefault();state.scale*=Math.exp(-e.deltaY*0.001);render();updateEst();}
 document.getElementById('fitBtn').onclick=fitImage;
 document.getElementById('resetBtn').onclick=fitImage;
 document.getElementById('overlayRange').oninput=render;
-quality.addEventListener('input', ()=>{ document.getElementById('qval').textContent=quality.value; updateEst(); });
-format.addEventListener('change', ()=>{ document.getElementById('qualityWrap').classList.toggle('hidden', format.value!=='image/jpeg' && format.value!=='image/webp'); updateEst(); });
 
 document.getElementById('exportBtn').onclick=()=>{
-  if(!imgLoaded) return alert('Load image first');
-  const w=Number(outW.value), h=Number(outH.value);
+  if(!imgLoaded)return alert('Load image first');
+  let w=Number(outW.value), h=Number(outH.value);
+  if(noUpscale.checked){ if(w>state.imgW || h>state.imgH){ const ratio=Math.min(state.imgW/w, state.imgH/h); w=Math.round(w*ratio); h=Math.round(h*ratio); } }
   const c=document.createElement('canvas'); c.width=w; c.height=h; const cx=c.getContext('2d');
   const bg=document.getElementById('bgSelect').value;
-  if(bg!=='transparent'){ cx.fillStyle=bg; cx.fillRect(0,0,w,h); }
-  if(document.getElementById('fitExport').checked){ const s=Math.min(w/state.imgW, h/state.imgH); cx.translate(w/2,h/2); cx.scale(s,s); cx.drawImage(img,-state.imgW/2,-state.imgH/2); } 
-  else { const r=w/canvas.width; cx.translate(w/2+state.tx*r, h/2+state.ty*r); cx.scale(state.scale*r, state.scale*r); cx.drawImage(img,-state.imgW/2,-state.imgH/2); }
-  const mime=format.value;
+  if(state.circle) cx.clearRect(0,0,w,h); else if(bg!=='transparent'){cx.fillStyle=bg;cx.fillRect(0,0,w,h);}
+  if(state.circle){ cx.beginPath(); cx.arc(w/2, h/2, Math.min(w,h)/2, 0, 2*Math.PI); cx.clip(); }
+  cx.save();
+  if(document.getElementById('fitExport').checked){ const s=Math.min(w/state.imgW, h/state.imgH); cx.translate(w/2,h/2); cx.scale(s,s); } 
+  else { const r=w/canvas.width; cx.translate(w/2+state.tx*r, h/2+state.ty*r); cx.scale(state.scale*r, state.scale*r); }
+  cx.rotate(state.rot*Math.PI/180); cx.scale(state.flipH, state.flipV);
+  cx.filter=`brightness(${state.bri}%) contrast(${state.con}%) grayscale(${state.gry}%)`;
+  cx.drawImage(img, -state.imgW/2, -state.imgH/2);
+  cx.restore();
+  const mime=format.value, q=Number(quality.value);
   if(mime==='image/svg+xml'){ const u=c.toDataURL('image/png'); const s=`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><image href="${u}" width="100%" height="100%"/></svg>`; download(new Blob([s],{type:mime}), 'svg'); } 
-  else { c.toBlob(b=>download(b, mime.split('/')[1]), mime, Number(quality.value)); }
+  else { c.toBlob(b=>download(b,mime.split('/')[1]), mime, q); }
 };
-function download(b, ext){ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`${document.getElementById('fname').value}.${ext}`; a.click(); }
+function download(b,e){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`${document.getElementById('fname').value}.${e}`;a.click();}
 
 async function updateEst(){
-  if(!imgLoaded){ document.getElementById('sizeEstimate').innerText='Est: --'; return; }
-  const w=Number(outW.value), h=Number(outH.value);
+  if(!imgLoaded){document.getElementById('sizeEstimate').innerText='Est: --';return;}
+  let w=Number(outW.value), h=Number(outH.value);
+  if(noUpscale.checked){ if(w>state.imgW || h>state.imgH){ const ratio=Math.min(state.imgW/w, state.imgH/h); w=Math.round(w*ratio); h=Math.round(h*ratio); } }
   const c=document.createElement('canvas'); c.width=w; c.height=h; const cx=c.getContext('2d');
   const bg=document.getElementById('bgSelect').value;
-  if(bg!=='transparent'){ cx.fillStyle=bg; cx.fillRect(0,0,w,h); }
-  if(document.getElementById('fitExport').checked){ const s=Math.min(w/state.imgW, h/state.imgH); cx.translate(w/2,h/2); cx.scale(s,s); cx.drawImage(img,-state.imgW/2,-state.imgH/2); }
-  else { const r=w/canvas.width; cx.translate(w/2+state.tx*r, h/2+state.ty*r); cx.scale(state.scale*r, state.scale*r); cx.drawImage(img,-state.imgW/2,-state.imgH/2); }
-  const mime=format.value;
-  if(mime==='image/svg+xml'){ document.getElementById('sizeEstimate').innerText='Est: Vector'; return; }
-  c.toBlob(blob=>{ if(blob) document.getElementById('sizeEstimate').innerText=`Est: ~${Math.round(blob.size/1024)} KB`; }, mime, Number(quality.value));
+  if(state.circle) cx.clearRect(0,0,w,h); else if(bg!=='transparent'){cx.fillStyle=bg;cx.fillRect(0,0,w,h);}
+  if(state.circle){ cx.beginPath(); cx.arc(w/2, h/2, Math.min(w,h)/2, 0, 2*Math.PI); cx.clip(); }
+  cx.save();
+  if(document.getElementById('fitExport').checked){ const s=Math.min(w/state.imgW, h/state.imgH); cx.translate(w/2,h/2); cx.scale(s,s); } 
+  else { const r=w/canvas.width; cx.translate(w/2+state.tx*r, h/2+state.ty*r); cx.scale(state.scale*r, state.scale*r); }
+  cx.rotate(state.rot*Math.PI/180); cx.scale(state.flipH, state.flipV);
+  cx.filter=`brightness(${state.bri}%) contrast(${state.con}%) grayscale(${state.gry}%)`;
+  cx.drawImage(img, -state.imgW/2, -state.imgH/2);
+  cx.restore();
+  const mime=format.value, q=Number(quality.value);
+  if(mime==='image/svg+xml'){document.getElementById('sizeEstimate').innerText='Est: Vector';return;}
+  c.toBlob(blob=>{if(blob)document.getElementById('sizeEstimate').innerText=`Est: ~${Math.round(blob.size/1024)} KB`;}, mime, q);
 }
 </script>
 </body>
