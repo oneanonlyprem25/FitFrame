@@ -336,7 +336,10 @@ function getDominantColor(imgEl) {
   const c = document.createElement('canvas');
   c.width=1; c.height=1;
   const cx = c.getContext('2d');
-  cx.drawImage(imgEl,0,0,1,1);
+  // UPDATED: Use 9-arg syntax to strictly grab the top-left pixel (0,0) only.
+  // This ensures solid color borders (like the pink bar in your logo) are perfectly matched
+  // instead of averaging the whole image.
+  cx.drawImage(imgEl, 0, 0, 1, 1, 0, 0, 1, 1);
   const p = cx.getImageData(0,0,1,1).data;
   return `rgb(${p[0]},${p[1]},${p[2]})`;
 }
