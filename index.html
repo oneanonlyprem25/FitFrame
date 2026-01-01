@@ -297,16 +297,25 @@ const defaultProps=()=>({
 let state=defaultProps();
 
 // Initialize UI with saved settings
-document.getElementById('outW').value = saved.w;
-document.getElementById('outH').value = saved.h;
+const preset = document.getElementById('preset');
+const custom = document.getElementById('customSize');
+const outW=document.getElementById('outW'), outH=document.getElementById('outH');
+
+outW.value = saved.w;
+outH.value = saved.h;
 document.getElementById('contentFit').value = saved.contentFit;
 document.getElementById('bgSelect').value = saved.bg;
 document.getElementById('autoFill').checked = saved.autoFill;
+
 // Attempt to set preset dropdown if matches common sizes
 const ps = `${saved.w}x${saved.h}`;
-const preset = document.getElementById('preset');
-if([...preset.options].map(o=>o.value).includes(ps)) preset.value = ps; 
-else { preset.value = 'custom'; document.getElementById('customSize').classList.remove('hidden'); }
+if([...preset.options].map(o=>o.value).includes(ps)) {
+  preset.value = ps;
+  custom.classList.add('hidden');
+} else { 
+  preset.value = 'custom'; 
+  custom.classList.remove('hidden'); 
+}
 
 const alignBtn = document.getElementById('alignBtn');
 alignBtn.onclick=()=>{galleryBar.classList.toggle('original-mode'); alignBtn.classList.toggle('active');};
@@ -437,8 +446,6 @@ document.getElementById('fitExport').onchange=e=>{state.fitExport=e.target.check
 document.getElementById('contentFit').onchange=e=>{state.contentFit=e.target.value; render(); updateEst(); saveSettings();}
 document.getElementById('autoFill').onchange=e=>{state.autoFill=e.target.checked; render(); updateEst(); saveSettings();}
 
-const outW=document.getElementById('outW'), outH=document.getElementById('outH');
-// const preset defined earlier
 preset.onchange=()=>{ 
   if(preset.value==='custom') custom.classList.remove('hidden'); 
   else { 
