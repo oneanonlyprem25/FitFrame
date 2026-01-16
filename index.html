@@ -215,6 +215,11 @@
           <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
           Instant Product Shot (700x850)
         </button>
+
+        <button id="fillSpaceBtn" class="btn-ghost" style="margin-bottom:12px; border:1px dashed var(--primary); color:var(--text-main);">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px; vertical-align:middle"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+          Fill Whitespace (Match Size)
+        </button>
         <label class="check-row" style="margin-bottom:12px"><span>Apply to All Uploaded Images</span><input id="applyToAll" type="checkbox"></label>
 
         <div style="height:1px; background:var(--border); margin:16px 0"></div>
@@ -336,9 +341,6 @@ function getDominantColor(imgEl) {
   const c = document.createElement('canvas');
   c.width=1; c.height=1;
   const cx = c.getContext('2d');
-  // UPDATED: Use 9-arg syntax to strictly grab the top-left pixel (0,0) only.
-  // This ensures solid color borders (like the pink bar in your logo) are perfectly matched
-  // instead of averaging the whole image.
   cx.drawImage(imgEl, 0, 0, 1, 1, 0, 0, 1, 1);
   const p = cx.getImageData(0,0,1,1).data;
   return `rgb(${p[0]},${p[1]},${p[2]})`;
@@ -349,7 +351,6 @@ function loadActiveImage(){
   const it=queue[activeIdx]; const i=new Image();
   i.onload=()=>{
     img=i;state=it.props;imgLoaded=true;
-    // Calculate dominant color if missing
     if(!state.dominantColor) state.dominantColor = getDominantColor(img);
     updateUI(); setView(true); 
     if(state.scale===1){setVisualSize();fitImage();}else{setVisualSize();render();} 
@@ -362,17 +363,14 @@ function renderGallery(){
   queue.forEach((it,ix)=>{
     const wrapper = document.createElement('div');
     wrapper.className = 'gallery-item';
-    
     const d=document.createElement('img'); 
     d.className=`thumb ${ix===activeIdx?'active':''}`; 
     d.src=it.url;
     d.onclick=()=>{if(ix!==activeIdx){activeIdx=ix;loadActiveImage();renderGallery();}};
-    
     const btn = document.createElement('div');
     btn.className='del-btn';
     btn.innerHTML='×';
     btn.onclick=(e)=>{ e.stopPropagation(); deleteImage(ix); };
-
     wrapper.appendChild(d);
     wrapper.appendChild(btn);
     galleryBar.appendChild(wrapper);
@@ -386,49 +384,60 @@ function deleteImage(ix){
     imgLoaded=false; setView(false); activeIdx=0;
   } else {
     if(ix === activeIdx) {
-      // If deleted active, go to nearest (or prev if was last)
       activeIdx = Math.min(ix, queue.length - 1);
       loadActiveImage();
     } else if (ix < activeIdx) {
-      // If deleted one before active, decrement index to stay on current
       activeIdx--;
     }
     renderGallery();
   }
 }
 
-// PRODUCT SHOT LOGIC (Updated with "Apply to All")
+// PRODUCT SHOT LOGIC
 document.getElementById('productShotBtn').onclick = () => {
   if(!imgLoaded) return;
-  
-  // Define the target settings
   const targetSettings = {
     w: 700, h: 850,
     bg: '#ffffff',
     contentFit: 'contain',
     fitExport: true,
-    autoFill: false // usually product shots want pure white
+    autoFill: false 
   };
-
   const applyToAll = document.getElementById('applyToAll').checked;
-
   if(applyToAll) {
-    // Apply to EVERY image in queue
-    queue.forEach(item => {
-      Object.assign(item.props, targetSettings);
-    });
-    // Update current state reference to match current active item
+    queue.forEach(item => { Object.assign(item.props, targetSettings); });
     state = queue[activeIdx].props;
   } else {
-    // Apply only to current image
     Object.assign(state, targetSettings);
   }
+  updateUI(); render(); updateEst(); saveSettings();
+};
 
-  updateUI(); // Refresh checkboxes/dropdowns
-  render();   // Re-render canvas
-  updateEst();
+// --- NEW FUNCTION: FILL WHITESPACE ---
+document.getElementById('fillSpaceBtn').onclick = () => {
+  if(!imgLoaded) return;
+  
+  // Set dimensions to image size
+  state.w = img.width;
+  state.h = img.height;
+  
+  // Reset transforms to fit perfectly
+  state.tx = 0; state.ty = 0; state.scale = 1; state.rot = 0;
+  
+  // Update UI inputs
+  document.getElementById('outW').value = state.w;
+  document.getElementById('outH').value = state.h;
+  
+  // Force dropdown to custom
+  preset.value = 'custom';
+  custom.classList.remove('hidden');
+
+  // Update visual state
+  updateDims();
+  render();
   saveSettings();
 };
+// -------------------------------------
 
 function updateUI(){
   document.getElementById('circleCrop').checked=state.circle; 
@@ -470,8 +479,6 @@ document.getElementById('bgSelect').onchange=e=>{state.bg=e.target.value; render
 
 function render(){
   if(!imgLoaded)return; ctx.clearRect(0,0,canvas.width,canvas.height);
-  
-  // Auto Fill / Background logic
   let bg = state.bg;
   if(state.autoFill && state.dominantColor) bg = state.dominantColor;
   if(!state.circle && bg!=='transparent') {
@@ -505,7 +512,6 @@ async function genBlob(st, el){
   if(st.noUpscale){if(w>el.width||h>el.height){const r=Math.min(el.width/w,el.height/h);w=Math.round(w*r);h=Math.round(h*r);}}
   const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');
   
-  // Export Background Logic
   let bg = st.bg;
   if(st.autoFill && st.dominantColor) bg = st.dominantColor;
 
@@ -543,7 +549,6 @@ async function downloadAll(){
   if(queue.length===0)return alert('No images');
   for(let i=0;i<queue.length;i++){
     const t=new Image();t.src=queue[i].url; await new Promise(r=>t.onload=r);
-    // Ensure dominant color is calculated if missing for batch
     if(queue[i].props.autoFill && !queue[i].props.dominantColor) queue[i].props.dominantColor = getDominantColor(t);
     const b=await genBlob(queue[i].props,t); const e=queue[i].props.format.split('/')[1];
     const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`${queue[i].name.split('.')[0]}-edit.${e}`;a.click();
